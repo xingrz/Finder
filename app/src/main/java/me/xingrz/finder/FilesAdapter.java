@@ -117,11 +117,13 @@ public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.Vie
         switch (holder.getItemViewType()) {
             case TYPE_FOLDER_ITEM:
                 holder.icon.setBackgroundResource(R.drawable.bg_folder);
+                holder.icon.setImageResource(R.drawable.ic_folder_white_24dp);
                 holder.name.setText(item.file.getName());
                 holder.description.setText(item.description);
                 break;
             case TYPE_FILE_ITEM:
                 holder.icon.setBackgroundResource(R.drawable.bg_file);
+                holder.icon.setImageResource(R.drawable.ic_receipt_white_24dp);
                 holder.name.setText(item.file.getName());
                 holder.description.setText(item.description);
                 break;
