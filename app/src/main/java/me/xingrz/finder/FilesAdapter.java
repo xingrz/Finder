@@ -25,10 +25,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Locale;
 
 public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.ViewHolder> {
 
@@ -37,18 +35,17 @@ public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.Vie
     public static final int TYPE_FILE_HEADER = 3;
     public static final int TYPE_FILE_ITEM = 4;
 
-    private final SimpleDateFormat dateFormat
-            = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault());
-
     private final LayoutInflater inflater;
 
-    private final ArrayList<File> folders = new ArrayList<>();
-    private final ArrayList<File> files = new ArrayList<>();
+    private final ArrayList<Item> items = new ArrayList<>();
 
     public FilesAdapter(Context context, File[] entries) {
         this.inflater = LayoutInflater.from(context);
 
         if (entries != null) {
+            ArrayList<File> folders = new ArrayList<>();
+            ArrayList<File> files = new ArrayList<>();
+
             for (File entry : entries) {
                 if (entry.isDirectory()) {
                     folders.add(entry);
@@ -59,6 +56,20 @@ public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.Vie
 
             Collections.sort(folders);
             Collections.sort(files);
+
+            if (!folders.isEmpty()) {
+                items.add(new Item(TYPE_FOLDER_HEADER, null, null));
+                for (File folder : folders) {
+                    items.add(new Item(TYPE_FOLDER_ITEM, folder, String.format("包含 %d 个文件", folder.list().length)));
+                }
+            }
+
+            if (!files.isEmpty()) {
+                items.add(new Item(TYPE_FILE_HEADER, null, null));
+                for (File file : files) {
+                    items.add(new Item(TYPE_FILE_ITEM, file, String.format("%.2f MB", (float) file.length() / 1024 / 1024)));
+                }
+            }
         }
     }
 
@@ -84,14 +95,8 @@ public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.Vie
                 onBindHeaderViewHolder((HeaderViewHolder) holder);
                 break;
             case TYPE_FOLDER_ITEM:
-                onBindEntryViewHolder((EntryViewHolder) holder, position - 1);
-                break;
             case TYPE_FILE_ITEM:
-                if (folders.isEmpty()) {
-                    onBindEntryViewHolder((EntryViewHolder) holder, position - 1);
-                } else {
-                    onBindEntryViewHolder((EntryViewHolder) holder, position - 2 - folders.size());
-                }
+                onBindEntryViewHolder((EntryViewHolder) holder, position);
                 break;
         }
     }
@@ -108,78 +113,39 @@ public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.Vie
     }
 
     private void onBindEntryViewHolder(EntryViewHolder holder, int position) {
+        Item item = items.get(position);
         switch (holder.getItemViewType()) {
             case TYPE_FOLDER_ITEM:
-                File folder = folders.get(position);
                 holder.icon.setBackgroundResource(R.drawable.bg_folder);
-                holder.name.setText(folder.getName());
-                holder.description.setText(dateFormat.format(folder.lastModified()));
+                holder.name.setText(item.file.getName());
+                holder.description.setText(item.description);
                 break;
             case TYPE_FILE_ITEM:
-                File file = files.get(position);
                 holder.icon.setBackgroundResource(R.drawable.bg_file);
-                holder.name.setText(file.getName());
-                holder.description.setText(dateFormat.format(file.lastModified()));
+                holder.name.setText(item.file.getName());
+                holder.description.setText(item.description);
                 break;
         }
     }
 
     @Override
     public int getItemCount() {
-        int count = 0;
-
-        if (!folders.isEmpty()) {
-            count += folders.size() + 1;
-        }
-
-        if (!files.isEmpty()) {
-            count += files.size() + 1;
-        }
-
-        return count;
+        return items.size();
     }
 
     @Override
     public int getItemViewType(int position) {
-        if (folders.isEmpty() && !files.isEmpty()) {
-            if (position == 0) {
-                return TYPE_FILE_HEADER;
-            } else {
-                return TYPE_FILE_ITEM;
-            }
-        }
-
-        if (!folders.isEmpty() && files.isEmpty()) {
-            if (position == 0) {
-                return TYPE_FOLDER_HEADER;
-            } else {
-                return TYPE_FOLDER_ITEM;
-            }
-        }
-
-        if (position == 0) {
-            return TYPE_FOLDER_HEADER;
-        } else if (position < folders.size() + 1) {
-            return TYPE_FOLDER_ITEM;
-        } else if (position == folders.size() + 1) {
-            return TYPE_FILE_HEADER;
-        } else {
-            return TYPE_FILE_ITEM;
-        }
+        return items.get(position).type;
     }
 
     private void onItemClick(EntryViewHolder holder) {
-        int position = holder.getAdapterPosition();
-        switch (holder.getItemViewType()) {
+        Item item = items.get(holder.getAdapterPosition());
+        switch (item.type) {
             case TYPE_FOLDER_ITEM:
-                openFolder(folders.get(position - 1));
+                openFolder(item.file);
                 break;
             case TYPE_FILE_ITEM:
-                if (!folders.isEmpty()) {
-                    position -= (folders.size() + 1);
-                }
-
-                openFile(files.get(position - 1));
+                openFile(item.file);
                 break;
         }
     }
@@ -187,6 +153,20 @@ public abstract class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.Vie
     protected abstract void openFolder(File folder);
 
     protected abstract void openFile(File file);
+
+    class Item {
+
+        public int type;
+        public File file;
+        public String description;
+
+        public Item(int type, File file, String description) {
+            this.type = type;
+            this.file = file;
+            this.description = description;
+        }
+
+    }
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
