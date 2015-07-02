@@ -65,6 +65,7 @@ public class FinderActivity extends SwipeBackActivity {
                 intent.setData(Uri.fromFile(folder));
                 intent.putExtra("back", true);
                 startActivity(intent);
+                overridePendingTransition(R.anim.slide_in, 0);
             }
 
             @Override
