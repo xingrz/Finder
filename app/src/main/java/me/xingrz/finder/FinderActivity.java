@@ -105,10 +105,9 @@ public class FinderActivity extends SwipeBackActivity {
 
     @Override
     public void supportFinishAfterTransition() {
+        super.supportFinishAfterTransition();
         if (getIntent().getBooleanExtra("back", false)) {
-            scrollToFinishActivity();
-        } else {
-            super.supportFinishAfterTransition();
+            overridePendingTransition(0, R.anim.slide_out);
         }
     }
 
