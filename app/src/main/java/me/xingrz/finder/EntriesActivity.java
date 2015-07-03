@@ -18,6 +18,7 @@ package me.xingrz.finder;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
@@ -31,7 +32,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import me.imid.swipebacklayout.lib.SwipeBackActivity;
 
-public abstract class BaseActivity extends SwipeBackActivity {
+public abstract class EntriesActivity extends SwipeBackActivity {
 
     public static final String EXTRA_ALLOW_BACK = "allow_back";
 
@@ -91,9 +92,12 @@ public abstract class BaseActivity extends SwipeBackActivity {
         }
     }
 
-    public void startFinder(Uri uri, Class<? extends BaseActivity> activity) {
-        Intent intent = new Intent(this, activity);
-        intent.setData(uri);
+    public void startFinder(Uri uri, Class<? extends EntriesActivity> activity) {
+        startFinder(new Intent(null, uri), activity);
+    }
+
+    public void startFinder(Intent intent, Class<? extends EntriesActivity> activity) {
+        intent.setClass(this, activity);
         intent.putExtra(EXTRA_ALLOW_BACK, true);
         startActivity(intent);
         overridePendingTransition(R.anim.slide_in, 0);
@@ -102,11 +106,24 @@ public abstract class BaseActivity extends SwipeBackActivity {
     public void safelyStartViewActivity(Uri uri, String type) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(uri, type);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+
+        for (ResolveInfo resolved : getPackageManager().queryIntentActivities(intent, 0)) {
+            if (BuildConfig.APPLICATION_ID.equals(resolved.activityInfo.packageName)) {
+                intent.setClassName(this, resolved.activityInfo.name);
+                intent.putExtra(EXTRA_ALLOW_BACK, true);
+            }
+        }
 
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
             Log.d(TAG, "Failed to start viewer activity for uri " + uri.toString(), e);
+        }
+
+        if (intent.getComponent() != null &&
+                BuildConfig.APPLICATION_ID.equals(intent.getComponent().getPackageName())) {
+            overridePendingTransition(R.anim.slide_in, 0);
         }
     }
 

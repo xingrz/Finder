@@ -25,4 +25,9 @@
     <color name="icons">#FFFFFF</color>
     <color name="divider">#B6B6B6</color>
 
+    <color name="primary_zip">#4CAF50</color>
+    <color name="primary_dark_zip">#388E3C</color>
+    <color name="primary_light_zip">#C8E6C9</color>
+    <color name="accent_zip">#FF9800</color>
+
 </resources>

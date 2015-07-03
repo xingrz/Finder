@@ -26,7 +26,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 
-public class FinderActivity extends BaseActivity {
+public class FinderActivity extends EntriesActivity {
 
     private File current;
 
