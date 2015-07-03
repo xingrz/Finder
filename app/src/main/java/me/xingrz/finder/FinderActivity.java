@@ -16,72 +16,51 @@
 
 package me.xingrz.finder;
 
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v7.app.ActionBar;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.view.MenuItem;
 import android.webkit.MimeTypeMap;
 
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 
-import me.imid.swipebacklayout.lib.SwipeBackActivity;
+public class FinderActivity extends BaseActivity {
 
-public class FinderActivity extends SwipeBackActivity {
+    private File current;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreateInternal(Bundle savedInstanceState) {
+        super.onCreateInternal(savedInstanceState);
+        current = determineCurrentFile();
+    }
 
-        setContentView(R.layout.activity_finder);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+    @Override
+    protected int provideContentView() {
+        return R.layout.activity_finder;
+    }
 
-        boolean allowBack = getIntent().getBooleanExtra("back", false);
+    @Override
+    protected String getCurrentDisplayName() {
+        return current.getName();
+    }
 
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(allowBack);
-        }
-
-        setSwipeBackEnable(allowBack);
-
-        File current = determineCurrentFile();
-
-        setTitle(current.getName());
-
-        RecyclerView filesView = (RecyclerView) findViewById(R.id.files);
-        filesView.setLayoutManager(new LinearLayoutManager(this));
-        filesView.setAdapter(new FilesAdapter(this, current.listFiles()) {
+    @Override
+    protected RecyclerView.Adapter getAdapter() {
+        return new FilesAdapter(this, current.listFiles()) {
             @Override
             protected void openFolder(File folder) {
-                Intent intent = new Intent(FinderActivity.this, FinderActivity.class);
-                intent.setData(Uri.fromFile(folder));
-                intent.putExtra("back", true);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_in, 0);
+                startFinder(Uri.fromFile(folder), FinderActivity.class);
             }
 
             @Override
             protected void openFile(File file) {
                 String extension = FilenameUtils.getExtension(file.getName());
                 String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(Uri.fromFile(file), mime);
-
-                try {
-                    startActivity(intent);
-                } catch (ActivityNotFoundException ignored) {
-                }
+                safelyStartViewActivity(Uri.fromFile(file), mime);
             }
-        });
+        };
     }
 
     private File determineCurrentFile() {
@@ -89,25 +68,6 @@ public class FinderActivity extends SwipeBackActivity {
             return new File(getIntent().getData().getPath());
         } else {
             return Environment.getExternalStorageDirectory();
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                supportFinishAfterTransition();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public void supportFinishAfterTransition() {
-        super.supportFinishAfterTransition();
-        if (getIntent().getBooleanExtra("back", false)) {
-            overridePendingTransition(0, R.anim.slide_out);
         }
     }
 
