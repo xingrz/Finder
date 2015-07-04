@@ -39,7 +39,7 @@ public abstract class EntriesAdapter<E> extends RecyclerView.Adapter<EntriesAdap
     public static final int TYPE_FILE_HEADER = 3;
     public static final int TYPE_FILE_ITEM = 4;
 
-    private final LayoutInflater inflater;
+    protected final LayoutInflater inflater;
 
     private final ArrayList<EntryHolder> items = new ArrayList<>();
 
@@ -130,13 +130,21 @@ public abstract class EntriesAdapter<E> extends RecyclerView.Adapter<EntriesAdap
         switch (viewType) {
             case TYPE_FOLDER_HEADER:
             case TYPE_FILE_HEADER:
-                return new HeaderViewHolder(inflater.inflate(R.layout.item_header, parent, false));
+                return onCreateHeaderViewHolder(parent);
             case TYPE_FOLDER_ITEM:
             case TYPE_FILE_ITEM:
-                return new EntryViewHolder(inflater.inflate(R.layout.item_entry, parent, false));
+                return onCreateEntryViewHolder(parent);
             default:
                 return null;
         }
+    }
+
+    protected EntriesAdapter.ViewHolder onCreateHeaderViewHolder(ViewGroup parent) {
+        return new HeaderViewHolder(inflater.inflate(R.layout.item_header, parent, false));
+    }
+
+    protected EntriesAdapter.ViewHolder onCreateEntryViewHolder(ViewGroup parent) {
+        return new EntryViewHolder(inflater.inflate(R.layout.item_entry, parent, false));
     }
 
     @Override
@@ -153,7 +161,7 @@ public abstract class EntriesAdapter<E> extends RecyclerView.Adapter<EntriesAdap
         }
     }
 
-    private void onBindHeaderViewHolder(EntriesAdapter.HeaderViewHolder holder) {
+    protected void onBindHeaderViewHolder(EntriesAdapter.HeaderViewHolder holder) {
         switch (holder.getItemViewType()) {
             case TYPE_FOLDER_HEADER:
                 holder.name.setText("文件夹");
@@ -164,22 +172,30 @@ public abstract class EntriesAdapter<E> extends RecyclerView.Adapter<EntriesAdap
         }
     }
 
-    private void onBindEntryViewHolder(EntriesAdapter.EntryViewHolder holder, int position) {
+    protected void onBindEntryViewHolder(EntriesAdapter.EntryViewHolder holder, int position) {
         EntryHolder item = items.get(position);
         switch (holder.getItemViewType()) {
             case TYPE_FOLDER_ITEM:
-                holder.icon.setBackgroundResource(R.drawable.bg_folder);
-                holder.icon.setImageResource(item.icon);
-                holder.name.setText(item.name);
-                holder.description.setText(item.description);
+                onBindFolderItemViewHolder(holder, item);
                 break;
             case TYPE_FILE_ITEM:
-                holder.icon.setBackgroundResource(R.drawable.bg_file);
-                holder.icon.setImageResource(item.icon);
-                holder.name.setText(item.name);
-                holder.description.setText(item.description);
+                onBindFileItemViewHolder(holder, item);
                 break;
         }
+    }
+
+    protected void onBindFolderItemViewHolder(EntriesAdapter.EntryViewHolder holder, EntryHolder item) {
+        holder.icon.setBackgroundResource(R.drawable.bg_folder);
+        holder.icon.setImageResource(item.icon);
+        holder.name.setText(item.name);
+        holder.description.setText(item.description);
+    }
+
+    protected void onBindFileItemViewHolder(EntriesAdapter.EntryViewHolder holder, EntryHolder item) {
+        holder.icon.setBackgroundResource(R.drawable.bg_file);
+        holder.icon.setImageResource(item.icon);
+        holder.name.setText(item.name);
+        holder.description.setText(item.description);
     }
 
     @Override

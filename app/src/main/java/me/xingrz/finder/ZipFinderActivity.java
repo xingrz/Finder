@@ -17,6 +17,7 @@
 package me.xingrz.finder;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -34,26 +35,30 @@ public class ZipFinderActivity extends EntriesActivity {
 
     public static final String EXTRA_PREFIX = "prefix";
 
+    private static final int REQEUST_OPEN_FILE = 1;
+
     private static final String TAG = "ZipFinderActivity";
 
-    private File file;
+    private File current;
     private ZipFile zipFile;
+
+    private File tempFile;
 
     @Override
     protected void onCreateInternal(Bundle savedInstanceState) {
         super.onCreateInternal(savedInstanceState);
 
-        file = new File(getIntent().getData().getPath());
+        current = new File(getIntent().getData().getPath());
 
         try {
-            zipFile = new ZipFile(file);
+            zipFile = new ZipFile(current);
         } catch (ZipException e) {
-            Log.d(TAG, "failed to open zip file " + file.getAbsolutePath(), e);
+            Log.d(TAG, "failed to open zip file " + current.getAbsolutePath(), e);
         }
 
         if (getIntent().hasExtra(EXTRA_PREFIX)) {
             toolbar.setTitle(FilenameUtils.getName(getIntent().getStringExtra(EXTRA_PREFIX)));
-            toolbar.setSubtitle(file.getName());
+            toolbar.setSubtitle(current.getName());
         }
     }
 
@@ -64,7 +69,7 @@ public class ZipFinderActivity extends EntriesActivity {
 
     @Override
     protected String getCurrentDisplayName() {
-        return file.getName();
+        return current.getName();
     }
 
     @Override
@@ -89,8 +94,62 @@ public class ZipFinderActivity extends EntriesActivity {
 
             @Override
             protected void openFile(AbstractFile file) {
+                openFileInZip(file);
             }
         };
+    }
+
+    private void openFileInZip(ZipAdapter.AbstractFile file) {
+        if (getExternalCacheDir() == null) {
+            Log.e(TAG, "no external cache dir to extract");
+            return;
+        }
+
+        if (file.isDirectory || file.header == null) {
+            Log.e(TAG, "not a valid file to extract");
+            return;
+        }
+
+        File target = new File(getExternalCacheDir(), file.header.getFileName());
+        Intent intent = intentToView(Uri.fromFile(target), mimeOfFile(target));
+
+        if (intent.resolveActivityInfo(getPackageManager(), 0) == null) {
+            Log.e(TAG, "no activity to handle file " + file.path);
+            return;
+        }
+
+        try {
+            zipFile.extractFile(file.header, getExternalCacheDir().getAbsolutePath());
+        } catch (ZipException e) {
+            Log.e(TAG, "failed to extract file " + file.name, e);
+            return;
+        }
+
+        tempFile = target;
+
+        startActivityForResult(intent, REQEUST_OPEN_FILE);
+        overridePendingTransitionForBuiltInViewer(intent);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQEUST_OPEN_FILE:
+                if (tempFile != null && tempFile.exists()) {
+                    if (tempFile.delete()) {
+                        Log.d(TAG, "deleted temp file " + tempFile.getAbsolutePath());
+                    } else {
+                        Log.e(TAG, "failed to delete temp file " + tempFile.getAbsolutePath());
+                    }
+                }
+
+                tempFile = null;
+
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+                break;
+        }
     }
 
 }

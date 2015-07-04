@@ -17,15 +17,22 @@
 package me.xingrz.finder;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import com.google.common.collect.Lists;
 
 import net.lingala.zip4j.model.FileHeader;
 
 import java.io.File;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile> {
 
@@ -34,7 +41,7 @@ public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile>
     }
 
     private static List<AbstractFile> abstractFiles(List<FileHeader> headers, String prefix) {
-        HashSet<AbstractFile> files = new HashSet<>();
+        HashMap<String, AbstractFile> files = new HashMap<>();
 
         for (FileHeader header : headers) {
             String path = header.getFileName();
@@ -51,6 +58,10 @@ public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile>
 
             String name = path.substring(clipping);
 
+            if (name.isEmpty()) {
+                continue;
+            }
+
             boolean isDirectory = name.contains(File.separator);
 
             if (isDirectory) {
@@ -59,10 +70,28 @@ public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile>
                 path = path.substring(0, clipping + index);
             }
 
-            files.add(new AbstractFile(name, path, isDirectory));
+            AbstractFile file = new AbstractFile(name, path, isDirectory, isDirectory ? null : header);
+
+            if (files.containsKey(path)) {
+                files.get(path).files++;
+            } else {
+                files.put(path, file);
+            }
         }
 
-        return Lists.newArrayList(files);
+        return Lists.newArrayList(files.values());
+    }
+
+    @Override
+    protected EntriesAdapter.ViewHolder onCreateEntryViewHolder(ViewGroup parent) {
+        return new LockableEntryViewHolder(inflater.inflate(R.layout.item_entry_lockable, parent, false));
+    }
+
+    @Override
+    protected void onBindFileItemViewHolder(EntriesAdapter.EntryViewHolder holder, EntryHolder item) {
+        super.onBindFileItemViewHolder(holder, item);
+        boolean locked = item.entry.header != null && item.entry.header.isEncrypted();
+        ((LockableEntryViewHolder) holder).locked.setVisibility(locked ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -86,7 +115,13 @@ public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile>
 
     @Override
     protected String getDescription(AbstractFile entry) {
-        return "";
+        if (entry.isDirectory) {
+            return String.format("包含 %d 个文件", entry.files);
+        } else if (entry.header != null) {
+            return String.format("%.2f MB", (float) entry.header.getUncompressedSize() / 1024 / 1024);
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -100,28 +135,36 @@ public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile>
 
         public final String path;
 
-        public boolean isDirectory;
+        public final boolean isDirectory;
 
-        AbstractFile(String name, String path, boolean isDirectory) {
+        @Nullable
+        public final FileHeader header;
+
+        public int files;
+
+        AbstractFile(String name, String path, boolean isDirectory, @Nullable FileHeader header) {
             this.name = name;
             this.path = path;
             this.isDirectory = isDirectory;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof AbstractFile) && path.equals(((AbstractFile) o).path);
-        }
-
-        @Override
-        public int hashCode() {
-            return path.hashCode() + (isDirectory ? 1 : 0);
+            this.header = header;
         }
 
         @Override
         public String toString() {
             return String.format("AbstractFile[name:%s path:%s, isDirectory:%s]",
                     name, path, isDirectory);
+        }
+
+    }
+
+    class LockableEntryViewHolder extends EntryViewHolder {
+
+        @Bind(R.id.locked)
+        ImageView locked;
+
+        public LockableEntryViewHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
         }
 
     }

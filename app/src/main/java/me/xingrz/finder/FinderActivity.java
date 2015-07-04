@@ -20,9 +20,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.widget.RecyclerView;
-import android.webkit.MimeTypeMap;
-
-import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 
@@ -56,9 +53,7 @@ public class FinderActivity extends EntriesActivity {
 
             @Override
             protected void openFile(File file) {
-                String extension = FilenameUtils.getExtension(file.getName());
-                String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-                safelyStartViewActivity(Uri.fromFile(file), mime);
+                safelyStartViewActivity(file);
             }
         };
     }

@@ -27,6 +27,11 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
+
+import org.apache.commons.io.FilenameUtils;
+
+import java.io.File;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -103,9 +108,30 @@ public abstract class EntriesActivity extends SwipeBackActivity {
         overridePendingTransition(R.anim.slide_in, 0);
     }
 
-    public void safelyStartViewActivity(Uri uri, String type) {
+    public void safelyStartViewActivity(File file) {
+        safelyStartViewActivity(Uri.fromFile(file), mimeOfFile(file));
+    }
+
+    public void safelyStartViewActivity(Uri uri, String mime) {
+        Intent intent = intentToView(uri, mime);
+
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Log.d(TAG, "Failed to start viewer activity for uri " + uri.toString(), e);
+        }
+
+        overridePendingTransitionForBuiltInViewer(intent);
+    }
+
+    protected String mimeOfFile(File file) {
+        String extension = FilenameUtils.getExtension(file.getName());
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+    }
+
+    protected Intent intentToView(Uri uri, String mime) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(uri, type);
+        intent.setDataAndType(uri, mime);
         intent.addCategory(Intent.CATEGORY_DEFAULT);
 
         for (ResolveInfo resolved : getPackageManager().queryIntentActivities(intent, 0)) {
@@ -115,12 +141,10 @@ public abstract class EntriesActivity extends SwipeBackActivity {
             }
         }
 
-        try {
-            startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            Log.d(TAG, "Failed to start viewer activity for uri " + uri.toString(), e);
-        }
+        return intent;
+    }
 
+    protected void overridePendingTransitionForBuiltInViewer(Intent intent) {
         if (intent.getComponent() != null &&
                 BuildConfig.APPLICATION_ID.equals(intent.getComponent().getPackageName())) {
             overridePendingTransition(R.anim.slide_in, 0);
