@@ -90,8 +90,11 @@ public abstract class ZipAdapter extends EntriesAdapter<ZipAdapter.AbstractFile>
     @Override
     protected void onBindFileItemViewHolder(EntriesAdapter.EntryViewHolder holder, EntryHolder item) {
         super.onBindFileItemViewHolder(holder, item);
-        boolean locked = item.entry.header != null && item.entry.header.isEncrypted();
-        ((LockableEntryViewHolder) holder).locked.setVisibility(locked ? View.VISIBLE : View.GONE);
+        LockableEntryViewHolder lockableHolder = (LockableEntryViewHolder) holder;
+        lockableHolder.icon.setBackgroundResource(R.drawable.bg_file_zip);
+        lockableHolder.locked.setVisibility(item.entry.header != null && item.entry.header.isEncrypted()
+                ? View.VISIBLE
+                : View.GONE);
     }
 
     @Override
