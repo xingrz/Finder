@@ -28,6 +28,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
+import android.widget.Toast;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -119,6 +120,7 @@ public abstract class EntriesActivity extends SwipeBackActivity {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
             Log.d(TAG, "Failed to start viewer activity for uri " + uri.toString(), e);
+            Toast.makeText(this, "没有打开该文件的应用", Toast.LENGTH_SHORT).show();
         }
 
         overridePendingTransitionForBuiltInViewer(intent);
