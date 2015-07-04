@@ -83,6 +83,15 @@ public abstract class EntriesActivity extends SwipeBackActivity {
     protected void onCreateInternal(Bundle savedInstanceState) {
     }
 
+    @Override
+    protected final void onDestroy() {
+        onDestroyInternal();
+        super.onDestroy();
+    }
+
+    protected void onDestroyInternal() {
+    }
+
     @LayoutRes
     protected abstract int provideContentView();
 
