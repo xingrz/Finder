@@ -52,6 +52,8 @@ public class ZipFinderActivity extends EntriesActivity implements Runnable {
 
     private static final long PROGRESS_INTERVAL = 40;
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
     private File current;
     private ZipFile zipFile;
 
@@ -63,8 +65,6 @@ public class ZipFinderActivity extends EntriesActivity implements Runnable {
 
     private AlertDialog passwordPrompt;
 
-    private Handler handler;
-
     private ProgressDialog progressDialog;
 
     @Override
@@ -72,8 +72,6 @@ public class ZipFinderActivity extends EntriesActivity implements Runnable {
         super.onCreateInternal(savedInstanceState);
 
         current = new File(getIntent().getData().getPath());
-
-        handler = new Handler(Looper.getMainLooper());
 
         try {
             zipFile = new ZipFile(current);
@@ -134,11 +132,16 @@ public class ZipFinderActivity extends EntriesActivity implements Runnable {
 
         return new ZipAdapter(this, headers, getIntent().getStringExtra(EXTRA_PREFIX)) {
             @Override
-            protected void openFolder(AbstractFile folder) {
-                Intent intent = new Intent();
-                intent.setData(getIntent().getData());
-                intent.putExtra(EXTRA_PREFIX, folder.path);
-                startFinder(intent, ZipFinderActivity.class);
+            protected void openFolder(final AbstractFile folder) {
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = new Intent();
+                        intent.setData(getIntent().getData());
+                        intent.putExtra(EXTRA_PREFIX, folder.path);
+                        startFinder(intent, ZipFinderActivity.class);
+                    }
+                }, START_ACTIVITY_DELAY);
             }
 
             @Override

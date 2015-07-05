@@ -17,5 +17,5 @@
 <translate xmlns:android="http://schemas.android.com/apk/res/android"
     android:duration="@integer/abc_config_activityDefaultDur"
     android:fromXDelta="100%p"
-    android:interpolator="@android:interpolator/decelerate_quad"
+    android:interpolator="@android:interpolator/linear_out_slow_in"
     android:toXDelta="0" />

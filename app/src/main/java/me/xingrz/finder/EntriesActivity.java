@@ -42,6 +42,8 @@ public abstract class EntriesActivity extends SwipeBackActivity {
 
     public static final String EXTRA_ALLOW_BACK = "allow_back";
 
+    protected static final int START_ACTIVITY_DELAY = 100;
+
     private static final String TAG = "BaseActivity";
 
     @Bind(R.id.toolbar)

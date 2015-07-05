@@ -19,11 +19,15 @@ package me.xingrz.finder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.widget.RecyclerView;
 
 import java.io.File;
 
 public class FinderActivity extends EntriesActivity {
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private File current;
 
@@ -31,6 +35,12 @@ public class FinderActivity extends EntriesActivity {
     protected void onCreateInternal(Bundle savedInstanceState) {
         super.onCreateInternal(savedInstanceState);
         current = determineCurrentFile();
+    }
+
+    @Override
+    protected void onDestroyInternal() {
+        super.onDestroyInternal();
+        handler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -47,13 +57,23 @@ public class FinderActivity extends EntriesActivity {
     protected RecyclerView.Adapter getAdapter() {
         return new FilesAdapter(this, current.listFiles()) {
             @Override
-            protected void openFolder(File folder) {
-                startFinder(Uri.fromFile(folder), FinderActivity.class);
+            protected void openFolder(final File folder) {
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        startFinder(Uri.fromFile(folder), FinderActivity.class);
+                    }
+                }, START_ACTIVITY_DELAY);
             }
 
             @Override
-            protected void openFile(File file) {
-                safelyStartViewActivity(file);
+            protected void openFile(final File file) {
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        safelyStartViewActivity(file);
+                    }
+                }, START_ACTIVITY_DELAY);
             }
         };
     }
