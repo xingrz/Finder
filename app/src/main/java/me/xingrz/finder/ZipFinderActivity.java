@@ -50,7 +50,7 @@ public class ZipFinderActivity extends EntriesActivity implements Runnable {
 
     private static final int REQUEST_OPEN_FILE = 1;
 
-    private static final long PROGRESS_INTERVAL = 400;
+    private static final long PROGRESS_INTERVAL = 40;
 
     private File current;
     private ZipFile zipFile;
